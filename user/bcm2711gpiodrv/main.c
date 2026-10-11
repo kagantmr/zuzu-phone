@@ -14,7 +14,7 @@
 /* The console UART: its pinmux is not ours to change. */
 #define PIN_IS_UART(p) ((p) == 14 || (p) == 15)
 
-static Bcm2711GpioMMIO *gpio;
+static Bcm2711GpioMMIO *spi;
 
 static Err CheckPin(uint32_t pin)
 {
@@ -33,10 +33,10 @@ static Err GpioSetMode(uint32_t pin, uint32_t mode)
     uint32_t reg = pin / 10;
     uint32_t shift = (pin % 10) * 3;
 
-    uint32_t val = gpio->gpfsel[reg];
+    uint32_t val = spi->gpfsel[reg];
     val &= ~(0x7u << shift);
     val |= (mode << shift);
-    gpio->gpfsel[reg] = val;
+    spi->gpfsel[reg] = val;
     return ZUZU_OK;
 }
 
@@ -48,10 +48,10 @@ static Err GpioSetPull(uint32_t pin, uint32_t pull)
     uint32_t reg = pin / 16;
     uint32_t shift = (pin % 16) * 2;
 
-    uint32_t val = gpio->pup_pdn_cntrl[reg];
+    uint32_t val = spi->pup_pdn_cntrl[reg];
     val &= ~(0x3u << shift);
     val |= (pull << shift);
-    gpio->pup_pdn_cntrl[reg] = val;
+    spi->pup_pdn_cntrl[reg] = val;
     return ZUZU_OK;
 }
 
@@ -61,14 +61,14 @@ static void GpioWrite(uint32_t pin, uint32_t value)
     uint32_t mask = 1u << (pin % 32);
 
     if (value)
-        gpio->gpset[reg] = mask;
+        spi->gpset[reg] = mask;
     else
-        gpio->gpclr[reg] = mask;
+        spi->gpclr[reg] = mask;
 }
 
 static uint32_t GpioRead(uint32_t pin)
 {
-    return (gpio->gplev[pin / 32] >> (pin % 32)) & 1u;
+    return (spi->gplev[pin / 32] >> (pin % 32)) & 1u;
 }
 
 static void ReplyGpio(Err status, uint32_t value)
@@ -143,7 +143,7 @@ int main(void)
         LOG_ERROR(LOG_TAG, "could not map GPIO registers");
         return 1;
     }
-    gpio = (Bcm2711GpioMMIO *)mmio;
+    spi = (Bcm2711GpioMMIO *)mmio;
 
     Handle port = CreatePort();
     if (port < 0 || RegisterService("/svc/gpio", port) < 0) {
