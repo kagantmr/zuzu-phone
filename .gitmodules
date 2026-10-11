@@ -1,0 +1,4 @@
+[submodule "zuzu"]
+	path = zuzu
+	url = https://github.com/kagantmr/zuzu.git
+	branch = devel/zuzu-v2.0-prowl
